@@ -1,8 +1,32 @@
+import { useState } from "react";
 import { MessageCircle, Smartphone, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { ChatInterface } from "@/components/chat/ChatInterface";
 import scooterHero from "@/assets/scooter-hero.jpg";
 
 export const HeroSection = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  const handleStartChat = () => {
+    if (user) {
+      setIsChatOpen(true);
+    } else {
+      navigate("/auth");
+    }
+  };
+
+  const handleTrackOrder = () => {
+    if (user) {
+      setIsChatOpen(true);
+    } else {
+      navigate("/auth");
+    }
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-muted to-accent/10">
       {/* Background Elements */}
@@ -53,16 +77,18 @@ export const HeroSection = () => {
                   variant="hero" 
                   size="lg"
                   className="text-lg animate-pulse-glow"
+                  onClick={handleStartChat}
                 >
-                  Start Chat Support
+                  {user ? "Start Chat Support" : "Start Free Chat"}
                   <MessageCircle className="w-5 h-5" />
                 </Button>
                 <Button 
                   variant="ai" 
                   size="lg"
                   className="text-lg"
+                  onClick={handleTrackOrder}
                 >
-                  Track My Order
+                  {user ? "Track My Order" : "Login to Track Orders"}
                 </Button>
               </div>
 
@@ -100,6 +126,12 @@ export const HeroSection = () => {
           </div>
         </div>
       </div>
+      
+      {/* Chat Interface */}
+      <ChatInterface 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)} 
+      />
     </section>
   );
 };
