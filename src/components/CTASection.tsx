@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { MessageCircle, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { ChatInterface } from "@/components/chat/ChatInterface";
 
 export const CTASection = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const handleMobileLogin = () => {
     if (user) {
@@ -13,6 +16,14 @@ export const CTASection = () => {
       navigate("/");
     } else {
       // User not logged in, go to auth page
+      navigate("/auth");
+    }
+  };
+
+  const handleStartChat = () => {
+    if (user) {
+      setIsChatOpen(true);
+    } else {
       navigate("/auth");
     }
   };
@@ -53,10 +64,10 @@ export const CTASection = () => {
                 variant="outline" 
                 size="lg"
                 className="text-lg border-white/20 bg-white/10 text-white hover:bg-white/20"
-                onClick={handleMobileLogin}
+                onClick={handleStartChat}
               >
                 <MessageCircle className="w-5 h-5" />
-                {user ? "View Dashboard" : "Start Free Chat"}
+                {user ? "Start Chat Support" : "Start Free Chat"}
               </Button>
             </div>
 
@@ -77,6 +88,11 @@ export const CTASection = () => {
           </div>
         </div>
       </div>
+      
+      <ChatInterface 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)} 
+      />
     </section>
   );
 };

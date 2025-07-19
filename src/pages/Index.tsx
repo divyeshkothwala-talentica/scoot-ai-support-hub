@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { HeroSection } from "@/components/HeroSection";
@@ -6,10 +6,13 @@ import { FeaturesSection } from "@/components/FeaturesSection";
 import { ChatPreview } from "@/components/ChatPreview";
 import { CTASection } from "@/components/CTASection";
 import { Button } from "@/components/ui/button";
+import { ChatInterface } from "@/components/chat/ChatInterface";
+import { MessageCircle } from "lucide-react";
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   if (loading) {
     return (
@@ -42,6 +45,23 @@ const Index = () => {
       <FeaturesSection />
       <ChatPreview />
       <CTASection />
+      
+      {/* Floating Chat Button */}
+      {user && (
+        <Button
+          onClick={() => setIsChatOpen(true)}
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50"
+          size="icon"
+        >
+          <MessageCircle className="h-6 w-6" />
+        </Button>
+      )}
+      
+      {/* Chat Interface */}
+      <ChatInterface 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)} 
+      />
     </div>
   );
 };
