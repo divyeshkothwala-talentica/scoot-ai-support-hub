@@ -239,11 +239,11 @@ export const ConversationSidebar = ({
   };
 
   return (
-    <div className="w-80 border-r bg-muted/30 flex flex-col">
+    <div className="w-full md:w-80 border-r bg-muted/30 flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="p-3 md:p-4 border-b bg-background md:bg-transparent">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold flex items-center space-x-2">
+          <h3 className="font-semibold flex items-center space-x-2 text-sm md:text-base">
             <MessageSquare className="h-4 w-4" />
             <span>Conversations</span>
           </h3>
@@ -261,11 +261,11 @@ export const ConversationSidebar = ({
 
       {/* Conversations List */}
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1">
+        <div className="p-2 md:p-2 space-y-1">
           {conversations.map((conversation) => (
             <div
               key={conversation.id}
-              className={`group relative rounded-lg border p-3 cursor-pointer transition-colors ${
+              className={`group relative rounded-lg border p-2 md:p-3 cursor-pointer transition-colors ${
                 selectedConversationId === conversation.id
                   ? 'bg-primary/10 border-primary/20'
                   : 'hover:bg-muted/50 border-transparent'
@@ -273,38 +273,38 @@ export const ConversationSidebar = ({
               onClick={() => onConversationSelect(conversation.id)}
             >
               {editingId === conversation.id ? (
-                <div className="space-y-2">
-                  <Input
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') saveEdit();
-                      if (e.key === 'Escape') cancelEdit();
-                    }}
-                    className="h-8"
-                    autoFocus
-                  />
-                  <div className="flex space-x-1">
-                    <Button size="sm" variant="ghost" onClick={saveEdit} className="h-6 w-6 p-0">
-                      <Check className="h-3 w-3" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={cancelEdit} className="h-6 w-6 p-0">
-                      <X className="h-3 w-3" />
-                    </Button>
+                  <div className="space-y-2">
+                    <Input
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveEdit();
+                        if (e.key === 'Escape') cancelEdit();
+                      }}
+                      className="h-7 md:h-8 text-sm"
+                      autoFocus
+                    />
+                    <div className="flex space-x-1">
+                      <Button size="sm" variant="ghost" onClick={saveEdit} className="h-5 w-5 md:h-6 md:w-6 p-0">
+                        <Check className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={cancelEdit} className="h-5 w-5 md:h-6 md:w-6 p-0">
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
               ) : (
                 <>
                   <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm truncate" title={getDisplayTitle(conversation)}>
+                    <div className="flex-1 min-w-0 pr-2">
+                      <h4 className="font-medium text-xs md:text-sm truncate" title={getDisplayTitle(conversation)}>
                         {getDisplayTitle(conversation)}
                       </h4>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground mt-0.5 md:mt-1">
                         {formatDate(conversation.updated_at)}
                       </p>
                     </div>
-                    <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex space-x-0.5 md:space-x-1 opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <Button
                         size="sm"
                         variant="ghost"
@@ -312,9 +312,9 @@ export const ConversationSidebar = ({
                           e.stopPropagation();
                           startEdit(conversation);
                         }}
-                        className="h-6 w-6 p-0"
+                        className="h-5 w-5 md:h-6 md:w-6 p-0"
                       >
-                        <Edit2 className="h-3 w-3" />
+                        <Edit2 className="h-2.5 w-2.5 md:h-3 md:w-3" />
                       </Button>
                       <Button
                         size="sm"
@@ -323,9 +323,9 @@ export const ConversationSidebar = ({
                           e.stopPropagation();
                           deleteConversation(conversation.id);
                         }}
-                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        className="h-5 w-5 md:h-6 md:w-6 p-0 text-destructive hover:text-destructive"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-2.5 w-2.5 md:h-3 md:w-3" />
                       </Button>
                     </div>
                   </div>
@@ -335,9 +335,9 @@ export const ConversationSidebar = ({
           ))}
           
           {conversations.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No conversations yet</p>
+            <div className="text-center py-6 md:py-8 text-muted-foreground px-4">
+              <MessageSquare className="h-6 w-6 md:h-8 md:w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-xs md:text-sm">No conversations yet</p>
               <p className="text-xs">Click "New Chat" to start</p>
             </div>
           )}
