@@ -694,8 +694,8 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] p-0 w-[95vw] md:w-full">
-        <div className="flex h-full">
+      <DialogContent className="max-w-6xl h-[90vh] p-0 w-[95vw] md:w-full flex flex-col">
+        <div className="flex h-full min-h-0">
           {/* Sidebar Overlay for Mobile */}
           {showSidebar && (
             <div 
@@ -714,6 +714,7 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
             w-80 md:w-80 
             transition-transform duration-300 ease-in-out
             md:transition-none
+            h-full
           `}>
             <ConversationSidebar
               selectedConversationId={conversationId}
@@ -729,9 +730,9 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
           </div>
           
           {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col min-h-0 w-full md:w-auto">
+          <div className="flex-1 flex flex-col min-h-0 h-full w-full md:w-auto">
             {/* Header */}
-            <div className="p-3 md:p-4 border-b bg-background flex items-center justify-between">
+            <div className="flex-shrink-0 p-3 md:p-4 border-b bg-background flex items-center justify-between">
               <DialogTitle className="flex items-center space-x-2">
                 <MessageSquare className="h-5 w-5 text-primary" />
                 <span>Support Chat</span>
@@ -757,41 +758,43 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
             </div>
 
             {/* Messages Area - Fixed height with proper scrolling */}
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
-                {/* Quick Questions - Always show at top */}
-                <QuickQuestions onQuestionSelect={handleQuestionSelect} />
-                
-                {messages.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-6 md:py-8">
-                    <MessageSquare className="h-8 w-8 md:h-12 md:w-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-sm md:text-base">Start a conversation with our support team</p>
-                    <p className="text-xs md:text-sm mt-2">Use the questions above or ask anything!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 md:space-y-4">
-                    {messages.map(renderMessage)}
-                  </div>
-                )}
-                
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted text-muted-foreground px-3 py-2 md:px-4 md:py-2 rounded-lg">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              <div className="flex-1 overflow-y-auto p-3 md:p-4">
+                <div className="space-y-3 md:space-y-4">
+                  {/* Quick Questions - Always show at top */}
+                  <QuickQuestions onQuestionSelect={handleQuestionSelect} />
+                  
+                  {messages.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-6 md:py-8">
+                      <MessageSquare className="h-8 w-8 md:h-12 md:w-12 mx-auto mb-4 opacity-50" />
+                      <p className="text-sm md:text-base">Start a conversation with our support team</p>
+                      <p className="text-xs md:text-sm mt-2">Use the questions above or ask anything!</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 md:space-y-4">
+                      {messages.map(renderMessage)}
+                    </div>
+                  )}
+                  
+                  {isTyping && (
+                    <div className="flex justify-start">
+                      <div className="bg-muted text-muted-foreground px-3 py-2 md:px-4 md:py-2 rounded-lg">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
               </div>
             </div>
 
             {/* Upload Progress */}
             {isUploading && (
-              <div className="px-3 py-2 md:px-4 md:py-2 border-t bg-muted/30">
+              <div className="flex-shrink-0 px-3 py-2 md:px-4 md:py-2 border-t bg-muted/30">
                 <div className="flex items-center space-x-2">
                   <Upload className="h-4 w-4" />
                   <div className="flex-1">
@@ -804,8 +807,8 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
               </div>
             )}
 
-            {/* Input Area */}
-            <div className="border-t p-3 md:p-4 bg-background">
+            {/* Input Area - Always visible at bottom */}
+            <div className="flex-shrink-0 border-t p-3 md:p-4 bg-background">
               <div className="flex items-end space-x-2">
                 <div className="flex-1 relative">
                   <Textarea
