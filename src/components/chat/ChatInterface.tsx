@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { QuickQuestions } from "./QuickQuestions";
+import { ConversationSidebar } from "./ConversationSidebar";
 import { PredefinedQuestion, PREDEFINED_QUESTIONS } from "@/data/predefinedQuestions";
 
 interface ChatMessage {
@@ -64,7 +65,7 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
 
   // Initialize conversation when chat opens
   useEffect(() => {
-    if (isOpen && user) {
+    if (isOpen && user && !conversationId) {
       initializeConversation();
     }
   }, [isOpen, user]);
@@ -136,27 +137,20 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
     if (!user) return;
 
     try {
-      // Check if user has existing conversation
+      // Check if user has existing conversations
       const { data: existing } = await supabase
         .from('chat_conversations')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
-      if (existing) {
-        setConversationId(existing.id);
-        loadMessages(existing.id);
+      if (existing && existing.length > 0) {
+        setConversationId(existing[0].id);
+        loadMessages(existing[0].id);
       } else {
-        // Create new conversation
-        const { data: newConversation, error } = await supabase
-          .from('chat_conversations')
-          .insert({ user_id: user.id, title: 'Support Chat' })
-          .select()
-          .single();
-
-        if (error) throw error;
-        
-        setConversationId(newConversation.id);
+        // Create first conversation
+        createNewConversation();
       }
     } catch (error) {
       console.error('Error initializing conversation:', error);
@@ -166,6 +160,47 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
         variant: "destructive"
       });
     }
+  };
+
+  const createNewConversation = async () => {
+    if (!user) return;
+
+    try {
+      const { data: newConversation, error } = await supabase
+        .from('chat_conversations')
+        .insert({ 
+          user_id: user.id, 
+          title: 'New Chat'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setConversationId(newConversation.id);
+      setMessages([]); // Clear messages for new conversation
+      
+      return newConversation.id;
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create new conversation",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleConversationSelect = (convId: string) => {
+    if (convId !== conversationId) {
+      setConversationId(convId);
+      loadMessages(convId);
+    }
+  };
+
+  const handleNewConversation = () => {
+    // Conversation is already created in the sidebar, just clear messages
+    setMessages([]);
   };
 
   const loadMessages = async (convId: string) => {
@@ -461,7 +496,7 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl h-[600px] flex flex-col p-0">
+      <DialogContent className="max-w-6xl h-[700px] flex flex-col p-0">
         <DialogHeader className="p-4 border-b">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center space-x-2">
@@ -473,7 +508,7 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                 variant="ghost" 
                 size="sm" 
                 onClick={clearChat}
-                title="Clear chat"
+                title="Clear current chat"
               >
                 <RotateCcw className="h-4 w-4" />
               </Button>
@@ -484,118 +519,132 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
           </div>
         </DialogHeader>
 
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Quick Questions - Always show at top */}
-          <QuickQuestions onQuestionSelect={handleQuestionSelect} />
-          
-          {messages.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">
-              <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Start a conversation with our support team</p>
+        {/* Main Chat Area with Sidebar */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Conversation Sidebar */}
+          <ConversationSidebar
+            selectedConversationId={conversationId}
+            onConversationSelect={handleConversationSelect}
+            onNewConversation={handleNewConversation}
+          />
+
+          {/* Chat Messages Area */}
+          <div className="flex-1 flex flex-col">
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Quick Questions - Always show at top */}
+              <QuickQuestions onQuestionSelect={handleQuestionSelect} />
+              
+              {messages.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Start a conversation with our support team</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map(renderMessage)}
+                </div>
+              )}
+              
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-muted text-muted-foreground px-4 py-2 rounded-lg">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
-          ) : (
-            <div className="space-y-4">
-              {messages.map(renderMessage)}
-            </div>
-          )}
-          
-          {isTyping && (
-            <div className="flex justify-start">
-              <div className="bg-muted text-muted-foreground px-4 py-2 rounded-lg">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+
+            {/* Upload Progress */}
+            {isUploading && (
+              <div className="px-4 py-2 border-t bg-muted/30">
+                <div className="flex items-center space-x-2">
+                  <Upload className="h-4 w-4" />
+                  <div className="flex-1">
+                    <Progress value={uploadProgress} className="h-2" />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Uploading... {Math.round(uploadProgress)}%
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+            )}
 
-        {/* Upload Progress */}
-        {isUploading && (
-          <div className="px-4 py-2 border-t bg-muted/30">
-            <div className="flex items-center space-x-2">
-              <Upload className="h-4 w-4" />
-              <div className="flex-1">
-                <Progress value={uploadProgress} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Uploading... {Math.round(uploadProgress)}%
-                </p>
+            {/* Input Area */}
+            <div className="p-4 border-t bg-background">
+              <div className="flex space-x-2">
+                <div className="flex-1">
+                  <Textarea
+                    value={newMessage}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      handleTypingStart();
+                    }}
+                    placeholder="Type your message..."
+                    className="min-h-[40px] max-h-[120px] resize-none"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendClick();
+                      }
+                    }}
+                  />
+                </div>
+                
+                <div className="flex flex-col space-y-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="h-10 w-10 p-0"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    onClick={handleSendClick}
+                    disabled={!newMessage.trim() || isLoading}
+                    size="sm"
+                    className="h-10 w-10 p-0"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* Input Area */}
-        <div className="p-4 border-t bg-background">
-          <div className="flex space-x-2">
-            <div className="flex-1">
-              <Textarea
-                value={newMessage}
+              {/* File input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                hidden
+                accept={Object.keys(ALLOWED_FILE_TYPES).join(',')}
                 onChange={(e) => {
-                  setNewMessage(e.target.value);
-                  handleTypingStart();
-                }}
-                placeholder="Type your message..."
-                className="min-h-[40px] max-h-[120px] resize-none"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendClick();
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    handleFileUpload(file);
+                    e.target.value = '';
                   }
                 }}
               />
-            </div>
-            
-            <div className="flex flex-col space-y-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="h-10 w-10 p-0"
-              >
-                <Paperclip className="h-4 w-4" />
-              </Button>
-              
-              <Button
-                onClick={handleSendClick}
-                disabled={!newMessage.trim() || isLoading}
-                size="sm"
-                className="h-10 w-10 p-0"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
 
-          {/* File input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            hidden
-            accept={Object.keys(ALLOWED_FILE_TYPES).join(',')}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                handleFileUpload(file);
-                e.target.value = '';
-              }
-            }}
-          />
-
-          {/* File type info */}
-          <div className="mt-2 flex flex-wrap gap-1">
-            <Badge variant="outline" className="text-xs">PDF</Badge>
-            <Badge variant="outline" className="text-xs">JPG</Badge>
-            <Badge variant="outline" className="text-xs">PNG</Badge>
-            <Badge variant="outline" className="text-xs">GIF</Badge>
-            <Badge variant="outline" className="text-xs">MP4</Badge>
-            <Badge variant="outline" className="text-xs">AVI</Badge>
-            <span className="text-xs text-muted-foreground ml-2">Max 25MB</span>
+              {/* File type info */}
+              <div className="mt-2 flex flex-wrap gap-1">
+                <Badge variant="outline" className="text-xs">PDF</Badge>
+                <Badge variant="outline" className="text-xs">JPG</Badge>
+                <Badge variant="outline" className="text-xs">PNG</Badge>
+                <Badge variant="outline" className="text-xs">GIF</Badge>
+                <Badge variant="outline" className="text-xs">MP4</Badge>
+                <Badge variant="outline" className="text-xs">AVI</Badge>
+                <span className="text-xs text-muted-foreground ml-2">Max 25MB</span>
+              </div>
+            </div>
           </div>
         </div>
       </DialogContent>
