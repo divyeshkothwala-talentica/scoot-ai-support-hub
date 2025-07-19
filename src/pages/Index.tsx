@@ -7,6 +7,7 @@ import { ChatPreview } from "@/components/ChatPreview";
 import { CTASection } from "@/components/CTASection";
 import { Button } from "@/components/ui/button";
 import { ChatInterface } from "@/components/chat/ChatInterface";
+import { FAQModal } from "@/components/chat/FAQModal";
 import { MessageCircle } from "lucide-react";
 
 const Index = () => {
@@ -30,14 +31,17 @@ const Index = () => {
             <p className="text-sm text-electric-green-800">
               Welcome back! You're logged in.
             </p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={signOut}
-              className="border-electric-green-300 text-electric-green-700 hover:bg-electric-green-100"
-            >
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-3">
+              <FAQModal />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={signOut}
+                className="border-electric-green-300 text-electric-green-700 hover:bg-electric-green-100"
+              >
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       )}

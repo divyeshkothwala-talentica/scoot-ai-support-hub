@@ -10,8 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { QuickQuestions } from "./QuickQuestions";
-import { ModelSpecificQuestions } from "./ModelSpecificQuestions";
-import { FAQSection } from "./FAQSection";
 import { ConversationSidebar } from "./ConversationSidebar";
 import { MessageFeedback } from "./MessageFeedback";
 
@@ -735,14 +733,6 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {/* Quick Questions - Always show at top */}
               <QuickQuestions onQuestionSelect={handleQuestionSelect} />
-              
-              {/* Model-Specific Questions */}
-              <ModelSpecificQuestions onQuestionSelect={handleQuestionSelect} />
-              
-              {/* FAQ Section */}
-              <FAQSection onArticleSelect={(article) => {
-                setNewMessage(`I need help with: ${article.title}\n\n${article.content}`);
-              }} />
               
               {messages.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
