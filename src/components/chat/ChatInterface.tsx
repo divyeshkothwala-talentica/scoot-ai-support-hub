@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { QuickQuestions } from "./QuickQuestions";
+import { PredefinedQuestion } from "@/data/predefinedQuestions";
 
 interface ChatMessage {
   id: string;
@@ -174,8 +176,9 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
     }
   };
 
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !conversationId || !user) return;
+  const sendMessage = async (messageContent?: string) => {
+    const content = messageContent || newMessage.trim();
+    if (!content || !conversationId || !user) return;
 
     setIsLoading(true);
     try {
@@ -184,12 +187,12 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
         .insert({
           conversation_id: conversationId,
           user_id: user.id,
-          content: newMessage,
+          content,
           message_type: 'text'
         });
 
       if (error) throw error;
-      setNewMessage("");
+      if (!messageContent) setNewMessage("");
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -200,6 +203,37 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const sendAutoReply = async (answer: string) => {
+    if (!conversationId || !user) return;
+
+    // Add a small delay to simulate thinking
+    setTimeout(async () => {
+      try {
+        await supabase
+          .from('chat_messages')
+          .insert({
+            conversation_id: conversationId,
+            user_id: 'system', // Use 'system' to indicate auto-reply
+            content: answer,
+            message_type: 'text'
+          });
+      } catch (error) {
+        console.error('Error sending auto-reply:', error);
+      }
+    }, 1000);
+  };
+
+  const handleQuestionSelect = async (question: PredefinedQuestion) => {
+    // Send user's question
+    await sendMessage(question.question);
+    // Send auto-reply
+    await sendAutoReply(question.answer);
+  };
+
+  const handleSendClick = () => {
+    sendMessage();
   };
 
   const handleFileUpload = async (file: File) => {
@@ -302,12 +336,15 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
 
   const renderMessage = (message: ChatMessage) => {
     const isCurrentUser = message.user_id === user?.id;
+    const isSystemMessage = message.user_id === 'system';
     
     return (
       <div key={message.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}>
         <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
           isCurrentUser 
             ? 'bg-primary text-primary-foreground' 
+            : isSystemMessage
+            ? 'bg-accent text-accent-foreground border border-accent-foreground/20'
             : 'bg-muted text-muted-foreground'
         }`}>
           {message.message_type === 'text' ? (
@@ -364,6 +401,11 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
 
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Quick Questions */}
+          {messages.length === 0 && (
+            <QuickQuestions onQuestionSelect={handleQuestionSelect} />
+          )}
+          
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -417,7 +459,7 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    sendMessage();
+                    handleSendClick();
                   }
                 }}
               />
@@ -435,7 +477,7 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
               </Button>
               
               <Button
-                onClick={sendMessage}
+                onClick={handleSendClick}
                 disabled={!newMessage.trim() || isLoading}
                 size="sm"
                 className="h-10 w-10 p-0"
