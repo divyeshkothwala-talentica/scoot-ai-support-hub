@@ -239,7 +239,7 @@ export const ConversationSidebar = ({
   };
 
   return (
-    <div className="w-full md:w-80 border-r bg-muted/30 flex flex-col h-full">
+    <div className="w-full md:w-80 border-r bg-background/95 backdrop-blur-sm flex flex-col h-full shadow-lg">
       {/* Header */}
       <div className="p-3 md:p-4 border-b bg-background md:bg-transparent">
         <div className="flex items-center justify-between mb-3">
