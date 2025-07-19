@@ -81,7 +81,14 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
         table: 'chat_messages',
         filter: `conversation_id=eq.${conversationId}`
       }, (payload) => {
-        setMessages(prev => [...prev, payload.new as ChatMessage]);
+        const newMessage = payload.new as ChatMessage;
+        setMessages(prev => {
+          // Avoid duplicates
+          if (prev.some(msg => msg.id === newMessage.id)) {
+            return prev;
+          }
+          return [...prev, newMessage];
+        });
       })
       .subscribe();
 
@@ -182,30 +189,56 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      // Send user message
+      const { data: userMessage, error } = await supabase
         .from('chat_messages')
         .insert({
           conversation_id: conversationId,
           user_id: user.id,
           content,
           message_type: 'text'
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+      
+      // Add user message to state immediately
+      setMessages(prev => [...prev, userMessage]);
+      
       if (!messageContent) setNewMessage("");
 
-      // Check if the message matches a predefined question and trigger auto-reply
+      // Check for auto-reply
       const matchingQuestion = PREDEFINED_QUESTIONS.find(q => 
         q.question.toLowerCase().trim() === content.toLowerCase().trim()
       );
       
-      if (matchingQuestion) {
-        // Send auto-reply immediately
-        setTimeout(() => sendAutoReply(matchingQuestion.answer), 500);
-      } else {
-        // Send generic auto-reply for any other message
-        setTimeout(() => sendAutoReply("Thank you for your message! Our support team will get back to you shortly. For immediate assistance, please use one of the quick questions above or call our support hotline."), 500);
-      }
+      // Send auto-reply after a short delay
+      setTimeout(async () => {
+        const replyContent = matchingQuestion 
+          ? matchingQuestion.answer 
+          : "Thank you for your message! Our support team will get back to you shortly. For immediate assistance, please use one of the quick questions above or call our support hotline.";
+        
+        try {
+          const { data: autoReply, error: replyError } = await supabase
+            .from('chat_messages')
+            .insert({
+              conversation_id: conversationId,
+              user_id: 'system',
+              content: replyContent,
+              message_type: 'text'
+            })
+            .select()
+            .single();
+
+          if (!replyError && autoReply) {
+            setMessages(prev => [...prev, autoReply]);
+          }
+        } catch (replyError) {
+          console.error('Error sending auto-reply:', replyError);
+        }
+      }, 1000);
+
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
