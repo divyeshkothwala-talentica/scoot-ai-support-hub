@@ -401,7 +401,7 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
         .getPublicUrl(data.path);
 
       // Save file message to database
-      const { error: messageError } = await supabase
+      const { data: fileMessage, error: messageError } = await supabase
         .from('chat_messages')
         .insert({
           conversation_id: conversationId,
@@ -411,14 +411,51 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
           file_name: file.name,
           file_size: file.size,
           file_type: file.type
-        });
+        })
+        .select()
+        .single();
 
       if (messageError) throw messageError;
+
+      // Add file message to state immediately for instant visibility
+      setMessages(prev => [...prev, fileMessage]);
+
+      // Trigger sidebar refresh
+      triggerSidebarRefresh();
 
       toast({
         title: "File uploaded",
         description: "File has been successfully uploaded"
       });
+
+      // Generate auto-response for file upload
+      setTimeout(async () => {
+        const fileTypeCategory = file.type.startsWith('image/') ? 'image' :
+                               file.type.startsWith('video/') ? 'video' :
+                               file.type === 'application/pdf' ? 'document' : 'file';
+        
+        const autoReplyContent = `Thank you for uploading your ${fileTypeCategory}! I've received "${file.name}" successfully. Our support team will review it and get back to you shortly. If you have any questions about this ${fileTypeCategory}, feel free to ask!`;
+        
+        try {
+          const { data: autoReply, error: replyError } = await supabase
+            .from('chat_messages')
+            .insert({
+              conversation_id: conversationId,
+              user_id: user.id,
+              content: `[Auto-Reply] ${autoReplyContent}`,
+              message_type: 'text'
+            })
+            .select()
+            .single();
+
+          if (!replyError && autoReply) {
+            setMessages(prev => [...prev, autoReply]);
+          }
+        } catch (replyError) {
+          console.error('Error sending file upload auto-reply:', replyError);
+        }
+      }, 1000);
+
     } catch (error) {
       console.error('Error uploading file:', error);
       toast({
