@@ -28,6 +28,7 @@ interface ChatMessage {
 interface ChatInterfaceProps {
   isOpen: boolean;
   onClose: () => void;
+  onConversationUpdate?: () => void;
 }
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
@@ -41,7 +42,7 @@ const ALLOWED_FILE_TYPES = {
   'video/avi': 'avi'
 };
 
-export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
+export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInterfaceProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -198,9 +199,16 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
     }
   };
 
+  const [refreshSidebar, setRefreshSidebar] = useState(0);
+
   const handleNewConversation = () => {
     // Conversation is already created in the sidebar, just clear messages
     setMessages([]);
+  };
+
+  const triggerSidebarRefresh = () => {
+    setRefreshSidebar(prev => prev + 1);
+    onConversationUpdate?.();
   };
 
   const loadMessages = async (convId: string) => {
@@ -241,6 +249,9 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
       
       // Add user message to state immediately
       setMessages(prev => [...prev, userMessage]);
+      
+      // Trigger sidebar refresh to update first message display
+      triggerSidebarRefresh();
       
       if (!messageContent) setNewMessage("");
 
@@ -523,6 +534,7 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
         <div className="flex-1 flex overflow-hidden">
           {/* Conversation Sidebar */}
           <ConversationSidebar
+            key={refreshSidebar} // Force refresh when new messages are sent
             selectedConversationId={conversationId}
             onConversationSelect={handleConversationSelect}
             onNewConversation={handleNewConversation}

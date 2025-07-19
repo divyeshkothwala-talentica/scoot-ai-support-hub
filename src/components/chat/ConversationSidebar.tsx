@@ -12,6 +12,7 @@ interface Conversation {
   title: string;
   created_at: string;
   updated_at: string;
+  first_message?: string;
 }
 
 interface ConversationSidebarProps {
@@ -49,7 +50,27 @@ export const ConversationSidebar = ({
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setConversations(data || []);
+
+      // Get first message for each conversation
+      const conversationsWithMessages = await Promise.all(
+        (data || []).map(async (conversation) => {
+          const { data: messages } = await supabase
+            .from('chat_messages')
+            .select('content')
+            .eq('conversation_id', conversation.id)
+            .eq('message_type', 'text')
+            .not('content', 'like', '[Auto-Reply]%') // Exclude auto-replies
+            .order('created_at', { ascending: true })
+            .limit(1);
+
+          return {
+            ...conversation,
+            first_message: messages?.[0]?.content || null
+          };
+        })
+      );
+
+      setConversations(conversationsWithMessages);
     } catch (error) {
       console.error('Error loading conversations:', error);
       toast({
@@ -76,7 +97,13 @@ export const ConversationSidebar = ({
 
       if (error) throw error;
 
-      setConversations(prev => [data, ...prev]);
+      // Add new conversation with empty first_message
+      const newConversationWithMessage = {
+        ...data,
+        first_message: null
+      };
+
+      setConversations(prev => [newConversationWithMessage, ...prev]);
       onConversationSelect(data.id);
       onNewConversation();
       
@@ -188,6 +215,17 @@ export const ConversationSidebar = ({
     setEditTitle("");
   };
 
+  const getDisplayTitle = (conversation: Conversation) => {
+    if (conversation.first_message) {
+      // Use first message as title, truncated
+      return conversation.first_message.length > 40 
+        ? `${conversation.first_message.substring(0, 40)}...`
+        : conversation.first_message;
+    }
+    // Fallback to original title if no first message
+    return conversation.title;
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -259,8 +297,8 @@ export const ConversationSidebar = ({
                 <>
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm truncate">
-                        {conversation.title}
+                      <h4 className="font-medium text-sm truncate" title={getDisplayTitle(conversation)}>
+                        {getDisplayTitle(conversation)}
                       </h4>
                       <p className="text-xs text-muted-foreground mt-1">
                         {formatDate(conversation.updated_at)}
