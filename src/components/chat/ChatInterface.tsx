@@ -26,6 +26,13 @@ interface ChatMessage {
   user_id: string;
 }
 
+interface MessageFeedback {
+  id: string;
+  message_id: string;
+  feedback_type: 'positive' | 'negative';
+  feedback_comment: string | null;
+}
+
 interface ChatInterfaceProps {
   isOpen: boolean;
   onClose: () => void;
@@ -47,6 +54,7 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messageFeedback, setMessageFeedback] = useState<Record<string, MessageFeedback>>({});
   const [newMessage, setNewMessage] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -222,8 +230,57 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
 
       if (error) throw error;
       setMessages(data || []);
+      
+      // Load feedback for all messages
+      if (data && data.length > 0) {
+        loadMessageFeedback(data.map(msg => msg.id));
+      }
     } catch (error) {
       console.error('Error loading messages:', error);
+    }
+  };
+
+  const loadMessageFeedback = async (messageIds: string[]) => {
+    if (!user || messageIds.length === 0) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('chat_feedback')
+        .select('*')
+        .in('message_id', messageIds)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Convert array to object for easy lookup
+      const feedbackMap: Record<string, MessageFeedback> = {};
+      data?.forEach(feedback => {
+        feedbackMap[feedback.message_id] = {
+          id: feedback.id,
+          message_id: feedback.message_id,
+          feedback_type: feedback.feedback_type as 'positive' | 'negative',
+          feedback_comment: feedback.feedback_comment
+        };
+      });
+
+      setMessageFeedback(feedbackMap);
+    } catch (error) {
+      console.error('Error loading message feedback:', error);
+    }
+  };
+
+  const handleFeedbackUpdate = (messageId: string, feedback: MessageFeedback | null) => {
+    if (feedback) {
+      setMessageFeedback(prev => ({
+        ...prev,
+        [messageId]: feedback
+      }));
+    } else {
+      setMessageFeedback(prev => {
+        const newFeedback = { ...prev };
+        delete newFeedback[messageId];
+        return newFeedback;
+      });
     }
   };
 
@@ -543,8 +600,9 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
           {isAutoReply && (
             <MessageFeedback 
               messageId={message.id}
-              onFeedbackSubmitted={() => {
-                // Optionally refresh feedback state if needed
+              existingFeedback={messageFeedback[message.id]}
+              onFeedbackSubmitted={(feedback) => {
+                handleFeedbackUpdate(message.id, feedback);
               }}
             />
           )}

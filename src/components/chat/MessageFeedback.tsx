@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ThumbsUp, ThumbsDown, MessageSquareMore } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -7,25 +7,41 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-interface MessageFeedbackProps {
-  messageId: string;
-  onFeedbackSubmitted?: () => void;
+interface MessageFeedback {
+  id: string;
+  message_id: string;
+  feedback_type: 'positive' | 'negative';
+  feedback_comment: string | null;
 }
 
-export const MessageFeedback = ({ messageId, onFeedbackSubmitted }: MessageFeedbackProps) => {
+interface MessageFeedbackProps {
+  messageId: string;
+  existingFeedback?: MessageFeedback;
+  onFeedbackSubmitted?: (feedback: MessageFeedback | null) => void;
+}
+
+export const MessageFeedback = ({ messageId, existingFeedback, onFeedbackSubmitted }: MessageFeedbackProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [feedback, setFeedback] = useState<'positive' | 'negative' | null>(null);
+  const [feedback, setFeedback] = useState<'positive' | 'negative' | null>(existingFeedback?.feedback_type || null);
   const [showNegativeFeedbackDialog, setShowNegativeFeedbackDialog] = useState(false);
-  const [feedbackComment, setFeedbackComment] = useState("");
+  const [feedbackComment, setFeedbackComment] = useState(existingFeedback?.feedback_comment || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update local state when existingFeedback changes
+  useEffect(() => {
+    if (existingFeedback) {
+      setFeedback(existingFeedback.feedback_type);
+      setFeedbackComment(existingFeedback.feedback_comment || "");
+    }
+  }, [existingFeedback]);
 
   const submitFeedback = async (type: 'positive' | 'negative', comment?: string) => {
     if (!user) return;
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('chat_feedback')
         .upsert({
           message_id: messageId,
@@ -34,12 +50,19 @@ export const MessageFeedback = ({ messageId, onFeedbackSubmitted }: MessageFeedb
           feedback_comment: comment || null
         }, {
           onConflict: 'message_id,user_id'
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
       setFeedback(type);
-      onFeedbackSubmitted?.();
+      onFeedbackSubmitted?.({
+        id: data.id,
+        message_id: data.message_id,
+        feedback_type: data.feedback_type as 'positive' | 'negative',
+        feedback_comment: data.feedback_comment
+      });
 
       toast({
         title: "Feedback submitted",
@@ -69,6 +92,10 @@ export const MessageFeedback = ({ messageId, onFeedbackSubmitted }: MessageFeedb
   };
 
   const handleNegativeFeedback = () => {
+    if (existingFeedback?.feedback_type === 'negative') {
+      // If already negative feedback, show the dialog with existing comment
+      setFeedbackComment(existingFeedback.feedback_comment || "");
+    }
     setShowNegativeFeedbackDialog(true);
   };
 
@@ -120,13 +147,19 @@ export const MessageFeedback = ({ messageId, onFeedbackSubmitted }: MessageFeedb
           
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              We're sorry this response wasn't helpful. Could you tell us what went wrong or what you were expecting?
+              {existingFeedback?.feedback_type === 'negative' 
+                ? "Update your feedback or modify your comment below:"
+                : "We're sorry this response wasn't helpful. Could you tell us what went wrong or what you were expecting?"
+              }
             </p>
             
             <Textarea
               value={feedbackComment}
               onChange={(e) => setFeedbackComment(e.target.value)}
-              placeholder="Please describe the issue or what you were looking for..."
+              placeholder={existingFeedback?.feedback_type === 'negative' 
+                ? "Update your feedback..." 
+                : "Please describe the issue or what you were looking for..."
+              }
               className="min-h-[100px]"
             />
             
@@ -142,7 +175,7 @@ export const MessageFeedback = ({ messageId, onFeedbackSubmitted }: MessageFeedb
                 onClick={handleNegativeFeedbackSubmit}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Submitting..." : "Submit Feedback"}
+                {isSubmitting ? "Submitting..." : existingFeedback?.feedback_type === 'negative' ? "Update Feedback" : "Submit Feedback"}
               </Button>
             </div>
           </div>
