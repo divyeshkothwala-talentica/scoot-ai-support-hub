@@ -194,13 +194,18 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
       if (error) throw error;
       if (!messageContent) setNewMessage("");
 
-      // Check if the message matches a predefined question and trigger auto-reply
+      // Always trigger an auto-reply
       const matchingQuestion = PREDEFINED_QUESTIONS.find(q => 
         q.question.toLowerCase().trim() === content.toLowerCase().trim()
       );
       
       if (matchingQuestion) {
+        // Use predefined answer for matching questions
         await sendAutoReply(matchingQuestion.answer);
+      } else {
+        // Provide a fallback response for other questions
+        const fallbackResponse = "Thank you for your question! Our support team has received your message and will get back to you shortly. In the meantime, you can browse our quick questions above for instant answers to common queries.";
+        await sendAutoReply(fallbackResponse);
       }
     } catch (error) {
       console.error('Error sending message:', error);
