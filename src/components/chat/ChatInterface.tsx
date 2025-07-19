@@ -272,22 +272,28 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
       const { error } = await supabase
         .from('chat_messages')
         .delete()
-        .eq('conversation_id', conversationId);
+        .eq('conversation_id', conversationId)
+        .eq('user_id', user.id); // Added user_id filter for additional security
 
-      if (error) throw error;
+      if (error) {
+        console.error('Delete error:', error);
+        throw error;
+      }
 
-      // Clear messages from state
+      // Clear messages from state immediately
       setMessages([]);
+      
+      console.log('Chat cleared successfully');
       
       toast({
         title: "Chat cleared",
-        description: "All messages have been deleted"
+        description: "All messages have been deleted successfully"
       });
     } catch (error) {
       console.error('Error clearing chat:', error);
       toast({
         title: "Error",
-        description: "Failed to clear chat",
+        description: "Failed to clear chat. Please try again.",
         variant: "destructive"
       });
     }
