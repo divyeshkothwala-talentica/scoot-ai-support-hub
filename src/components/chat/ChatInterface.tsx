@@ -200,7 +200,11 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
       );
       
       if (matchingQuestion) {
-        await sendAutoReply(matchingQuestion.answer);
+        // Send auto-reply immediately
+        setTimeout(() => sendAutoReply(matchingQuestion.answer), 500);
+      } else {
+        // Send generic auto-reply for any other message
+        setTimeout(() => sendAutoReply("Thank you for your message! Our support team will get back to you shortly. For immediate assistance, please use one of the quick questions above or call our support hotline."), 500);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -217,21 +221,19 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   const sendAutoReply = async (answer: string) => {
     if (!conversationId || !user) return;
 
-    // Add a small delay to simulate thinking
-    setTimeout(async () => {
-      try {
-        await supabase
-          .from('chat_messages')
-          .insert({
-            conversation_id: conversationId,
-            user_id: 'system', // Use 'system' to indicate auto-reply
-            content: answer,
-            message_type: 'text'
-          });
-      } catch (error) {
-        console.error('Error sending auto-reply:', error);
-      }
-    }, 1000);
+    try {
+      // Send auto-reply immediately without delay
+      await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: conversationId,
+          user_id: 'system', // Use 'system' to indicate auto-reply
+          content: answer,
+          message_type: 'text'
+        });
+    } catch (error) {
+      console.error('Error sending auto-reply:', error);
+    }
   };
 
   const handleQuestionSelect = (question: PredefinedQuestion) => {
@@ -408,10 +410,8 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
 
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Quick Questions */}
-          {messages.length === 0 && (
-            <QuickQuestions onQuestionSelect={handleQuestionSelect} />
-          )}
+          {/* Quick Questions - Always show at top */}
+          <QuickQuestions onQuestionSelect={handleQuestionSelect} />
           
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
@@ -419,7 +419,9 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
               <p>Start a conversation with our support team</p>
             </div>
           ) : (
-            messages.map(renderMessage)
+            <div className="space-y-4">
+              {messages.map(renderMessage)}
+            </div>
           )}
           
           {isTyping && (
