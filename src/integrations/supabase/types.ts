@@ -151,6 +151,86 @@ export type Database = {
           },
         ]
       }
+      faq_articles: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          created_by: string | null
+          helpful_count: number | null
+          id: string
+          is_published: boolean
+          not_helpful_count: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          view_count: number | null
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string
+          created_by?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_published?: boolean
+          not_helpful_count?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_published?: boolean
+          not_helpful_count?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
+      faq_ratings: {
+        Row: {
+          created_at: string
+          faq_id: string
+          feedback_comment: string | null
+          id: string
+          is_helpful: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          faq_id: string
+          feedback_comment?: string | null
+          id?: string
+          is_helpful: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          faq_id?: string
+          feedback_comment?: string | null
+          id?: string
+          is_helpful?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_ratings_faq_id_fkey"
+            columns: ["faq_id"]
+            isOneToOne: false
+            referencedRelation: "faq_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mobile_auth_sessions: {
         Row: {
           attempts: number
@@ -181,6 +261,53 @@ export type Database = {
         }
         Relationships: []
       }
+      model_specific_questions: {
+        Row: {
+          answer: string
+          category: string
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean
+          model_id: string
+          question: string
+          question_type: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          category: string
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean
+          model_id: string
+          question: string
+          question_type?: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          category?: string
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean
+          model_id?: string
+          question?: string
+          question_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_specific_questions_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "scooter_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -202,6 +329,66 @@ export type Database = {
           mobile_number?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      scooter_models: {
+        Row: {
+          battery_capacity: string
+          brake_type: string
+          charging_time_hours: number
+          created_at: string
+          id: string
+          is_active: boolean
+          max_load_kg: number
+          max_speed: number
+          model_code: string
+          model_name: string
+          motor_power: string
+          price: number
+          range_km: number
+          suspension: string
+          updated_at: string
+          weight_kg: number
+          wheel_size: string
+        }
+        Insert: {
+          battery_capacity: string
+          brake_type: string
+          charging_time_hours: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_load_kg: number
+          max_speed: number
+          model_code: string
+          model_name: string
+          motor_power: string
+          price: number
+          range_km: number
+          suspension: string
+          updated_at?: string
+          weight_kg: number
+          wheel_size: string
+        }
+        Update: {
+          battery_capacity?: string
+          brake_type?: string
+          charging_time_hours?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_load_kg?: number
+          max_speed?: number
+          model_code?: string
+          model_name?: string
+          motor_power?: string
+          price?: number
+          range_km?: number
+          suspension?: string
+          updated_at?: string
+          weight_kg?: number
+          wheel_size?: string
         }
         Relationships: []
       }
