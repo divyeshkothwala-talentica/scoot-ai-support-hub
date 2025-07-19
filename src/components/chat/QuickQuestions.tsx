@@ -1,78 +1,151 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
-import { PREDEFINED_QUESTIONS, QUESTION_CATEGORIES, PredefinedQuestion } from "@/data/predefinedQuestions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
+import { MessageCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-interface QuickQuestionsProps {
-  onQuestionSelect: (question: PredefinedQuestion) => void;
+interface AdminQuestion {
+  id: string;
+  category: string;
+  question: string;
+  answer: string;
+  is_active: boolean;
+  display_order: number;
 }
 
-export const QuickQuestions = ({ onQuestionSelect }: QuickQuestionsProps) => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+interface QuickQuestionsProps {
+  onQuestionSelect: (question: { question: string; answer: string }) => void;
+}
 
-  const getQuestionsByCategory = (category: string) => {
-    return PREDEFINED_QUESTIONS.filter(q => q.category === category);
+const categories = [
+  { value: 'delivery', label: 'Delivery', color: 'bg-blue-100 text-blue-800' },
+  { value: 'technical', label: 'Technical', color: 'bg-red-100 text-red-800' },
+  { value: 'service', label: 'Service', color: 'bg-green-100 text-green-800' },
+  { value: 'billing', label: 'Billing', color: 'bg-yellow-100 text-yellow-800' }
+];
+
+export const QuickQuestions = ({ onQuestionSelect }: QuickQuestionsProps) => {
+  const [questions, setQuestions] = useState<AdminQuestion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadQuestions();
+  }, []);
+
+  const loadQuestions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_questions')
+        .select('*')
+        .eq('is_active', true)
+        .order('category', { ascending: true })
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+      setQuestions(data || []);
+    } catch (error) {
+      console.error('Error loading questions:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  return (
-    <Card className="p-4 mb-4 bg-muted/30">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
+  const getCategoryQuestions = (category: string) => {
+    return questions.filter(q => q.category === category);
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="p-4 mb-4 bg-muted/30">
+        <div className="flex items-center space-x-2 mb-3">
           <MessageCircle className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium">Quick Questions</span>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="h-6 w-6 p-0"
-        >
-          {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </Button>
-      </div>
-
-      {isExpanded && (
-        <div className="space-y-3">
-          {/* Category Selection */}
-          <div className="flex flex-wrap gap-2">
-            {QUESTION_CATEGORIES.map((category) => (
-              <Badge
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                className="cursor-pointer transition-colors"
-                onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
-              >
-                {category}
-              </Badge>
-            ))}
-          </div>
-
-          {/* Questions */}
-          {selectedCategory ? (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground font-medium">{selectedCategory}</p>
-              {getQuestionsByCategory(selectedCategory).map((question) => (
-                <Button
-                  key={question.id}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onQuestionSelect(question)}
-                  className="w-full text-left h-auto p-2 text-xs leading-relaxed justify-start whitespace-normal"
-                >
-                  {question.question}
-                </Button>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Select a category above to see available questions
-            </p>
-          )}
+        <div className="flex flex-wrap gap-2">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-8 bg-muted animate-pulse rounded-md w-32"></div>
+          ))}
         </div>
-      )}
+      </Card>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <Card className="p-4 mb-4 bg-muted/30">
+        <div className="flex items-center space-x-2 mb-3">
+          <MessageCircle className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">Quick Questions</span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          No questions available at the moment
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-4 mb-4 bg-muted/30">
+      <div className="flex items-center space-x-2 mb-3">
+        <MessageCircle className="h-4 w-4 text-primary" />
+        <span className="text-sm font-medium">Quick Questions</span>
+      </div>
+      
+      <Tabs defaultValue="delivery" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 mb-3 h-8">
+          {categories.map(category => {
+            const categoryQuestions = getCategoryQuestions(category.value);
+            return (
+              <TabsTrigger 
+                key={category.value} 
+                value={category.value}
+                className="text-xs py-1"
+                disabled={categoryQuestions.length === 0}
+              >
+                {category.label}
+                {categoryQuestions.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs h-3 px-1 leading-none">
+                    {categoryQuestions.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+
+        {categories.map(category => {
+          const categoryQuestions = getCategoryQuestions(category.value);
+          
+          return (
+            <TabsContent key={category.value} value={category.value} className="mt-0">
+              <div className="flex flex-wrap gap-2">
+                {categoryQuestions.map(question => (
+                  <Button
+                    key={question.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onQuestionSelect({
+                      question: question.question,
+                      answer: question.answer
+                    })}
+                    className="text-xs h-8 px-3"
+                  >
+                    {question.question}
+                  </Button>
+                ))}
+                
+                {categoryQuestions.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    No questions available in this category
+                  </p>
+                )}
+              </div>
+            </TabsContent>
+          );
+        })}
+      </Tabs>
     </Card>
   );
 };

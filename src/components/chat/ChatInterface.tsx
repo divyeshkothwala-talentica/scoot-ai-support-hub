@@ -12,7 +12,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { QuickQuestions } from "./QuickQuestions";
 import { ConversationSidebar } from "./ConversationSidebar";
 import { MessageFeedback } from "./MessageFeedback";
-import { PredefinedQuestion, PREDEFINED_QUESTIONS } from "@/data/predefinedQuestions";
 
 interface ChatMessage {
   id: string;
@@ -313,13 +312,17 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
       
       if (!messageContent) setNewMessage("");
 
-      // Check for auto-reply
-      const matchingQuestion = PREDEFINED_QUESTIONS.find(q => 
-        q.question.toLowerCase().trim() === content.toLowerCase().trim()
-      );
+      // Check for auto-reply by finding matching question in database
+      const { data: matchingQuestions } = await supabase
+        .from('admin_questions')
+        .select('answer')
+        .eq('question', content.trim())
+        .eq('is_active', true)
+        .limit(1);
+      
+      const matchingQuestion = matchingQuestions?.[0];
       
       console.log('Matching question found:', matchingQuestion);
-      console.log('All predefined questions:', PREDEFINED_QUESTIONS.map(q => q.question));
       
       // Send auto-reply after a short delay
       setTimeout(async () => {
@@ -363,7 +366,7 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
     }
   };
 
-  const handleQuestionSelect = (question: PredefinedQuestion) => {
+  const handleQuestionSelect = (question: { question: string; answer: string }) => {
     // Populate the textarea with the selected question
     setNewMessage(question.question);
   };
