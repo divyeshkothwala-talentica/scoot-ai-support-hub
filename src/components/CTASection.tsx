@@ -1,7 +1,22 @@
 import { MessageCircle, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export const CTASection = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleMobileLogin = () => {
+    if (user) {
+      // User is already logged in, go to main app
+      navigate("/");
+    } else {
+      // User not logged in, go to auth page
+      navigate("/auth");
+    }
+  };
+
   return (
     <section className="py-24 bg-gradient-to-br from-primary via-primary-glow to-accent relative overflow-hidden">
       {/* Background Elements */}
@@ -28,18 +43,20 @@ export const CTASection = () => {
                 variant="secondary" 
                 size="lg"
                 className="text-lg shadow-glow bg-white hover:bg-white/90 text-primary"
+                onClick={handleMobileLogin}
               >
                 <Smartphone className="w-5 h-5" />
-                Login with Mobile
+                {user ? "Continue to Support" : "Login with Mobile"}
               </Button>
               
               <Button 
                 variant="outline" 
                 size="lg"
                 className="text-lg border-white/20 bg-white/10 text-white hover:bg-white/20"
+                onClick={handleMobileLogin}
               >
                 <MessageCircle className="w-5 h-5" />
-                Start Free Chat
+                {user ? "View Dashboard" : "Start Free Chat"}
               </Button>
             </div>
 
