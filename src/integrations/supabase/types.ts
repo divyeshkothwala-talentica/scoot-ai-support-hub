@@ -205,6 +205,51 @@ export type Database = {
         }
         Relationships: []
       }
+      scooter_orders: {
+        Row: {
+          created_at: string
+          delivery_address: string
+          estimated_delivery: string | null
+          id: string
+          order_number: string
+          order_status: string
+          order_total: number
+          scooter_color: string
+          scooter_model: string
+          tracking_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_address: string
+          estimated_delivery?: string | null
+          id?: string
+          order_number: string
+          order_status?: string
+          order_total: number
+          scooter_color: string
+          scooter_model: string
+          tracking_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_address?: string
+          estimated_delivery?: string | null
+          id?: string
+          order_number?: string
+          order_status?: string
+          order_total?: number
+          scooter_color?: string
+          scooter_model?: string
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       typing_indicators: {
         Row: {
           conversation_id: string

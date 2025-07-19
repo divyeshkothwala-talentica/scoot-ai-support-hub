@@ -366,9 +366,86 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
     }
   };
 
-  const handleQuestionSelect = (question: { question: string; answer: string }) => {
-    // Populate the textarea with the selected question
-    setNewMessage(question.question);
+  const handleQuestionSelect = async (question: { question: string; answer: string }) => {
+    if (!conversationId || !user) return;
+
+    try {
+      // Send the user's question first
+      const userMessage = {
+        conversation_id: conversationId,
+        content: question.question,
+        message_type: 'text' as const,
+        user_id: user.id
+      };
+
+      const { data: newUserMessage, error: userError } = await supabase
+        .from('chat_messages')
+        .insert(userMessage)
+        .select()
+        .single();
+
+      if (userError) throw userError;
+
+      setMessages(prev => [...prev, newUserMessage]);
+
+      // Check if question is about order tracking
+      const isOrderQuery = question.question.toLowerCase().includes('order') || 
+                          question.question.toLowerCase().includes('scooter') ||
+                          question.question.toLowerCase().includes('delivery');
+
+      // Then send the auto-reply with potential order information
+      setTimeout(async () => {
+        let replyContent = question.answer;
+
+        // If it's an order-related query, try to provide order information
+        if (isOrderQuery) {
+          try {
+            const { data: orders } = await supabase
+              .from('scooter_orders')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false });
+
+            if (orders && orders.length > 0) {
+              const orderInfo = orders.map(order => 
+                `Order ${order.order_number}: ${order.scooter_model} (${order.scooter_color}) - Status: ${order.order_status}${order.tracking_number ? `, Tracking: ${order.tracking_number}` : ''}${order.estimated_delivery ? `, ETA: ${new Date(order.estimated_delivery).toLocaleDateString()}` : ''}`
+              ).join('\n');
+              
+              replyContent = `${question.answer}\n\nYour Orders:\n${orderInfo}`;
+            }
+          } catch (orderError) {
+            console.error('Error fetching orders:', orderError);
+          }
+        }
+
+        const autoReplyMessage = {
+          conversation_id: conversationId,
+          content: `[Auto-Reply] ${replyContent}`,
+          message_type: 'text' as const,
+          user_id: user.id
+        };
+
+        const { data: replyMessage, error: replyError } = await supabase
+          .from('chat_messages')
+          .insert(autoReplyMessage)
+          .select()
+          .single();
+
+        console.log('Auto-reply result:', { autoReply: replyMessage, replyError });
+
+        if (replyError) throw replyError;
+
+        setMessages(prev => [...prev, replyMessage]);
+      }, 1000);
+
+    } catch (error) {
+      console.error('Error handling question selection:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive"
+      });
+    }
   };
 
   const clearChat = async () => {
