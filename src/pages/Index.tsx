@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { HeroSection } from "@/components/HeroSection";
 import { FeaturesSection } from "@/components/FeaturesSection";
-import { ChatPreview } from "@/components/ChatPreview";
 import { CTASection } from "@/components/CTASection";
 import { Button } from "@/components/ui/button";
 import { ChatInterface } from "@/components/chat/ChatInterface";
@@ -47,7 +46,6 @@ const Index = () => {
       )}
       <HeroSection />
       <FeaturesSection />
-      <ChatPreview />
       <CTASection />
       
       {/* Floating Chat Button */}
