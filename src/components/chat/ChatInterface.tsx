@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, Send, Paperclip, X, Upload } from "lucide-react";
+import { MessageSquare, Send, Paperclip, X, Upload, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -264,6 +264,35 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
     setNewMessage(question.question);
   };
 
+  const clearChat = async () => {
+    if (!conversationId || !user) return;
+
+    try {
+      // Delete all messages in the current conversation
+      const { error } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('conversation_id', conversationId);
+
+      if (error) throw error;
+
+      // Clear messages from state
+      setMessages([]);
+      
+      toast({
+        title: "Chat cleared",
+        description: "All messages have been deleted"
+      });
+    } catch (error) {
+      console.error('Error clearing chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear chat",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSendClick = () => {
     sendMessage();
   };
@@ -367,20 +396,28 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   };
 
   const renderMessage = (message: ChatMessage) => {
-    const isCurrentUser = message.user_id === user?.id;
-    const isSystemMessage = message.user_id === 'system';
+    const isCurrentUser = message.user_id === user?.id && !message.content?.startsWith('[Auto-Reply]');
+    const isAutoReply = message.content?.startsWith('[Auto-Reply]');
     
     return (
       <div key={message.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}>
         <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
           isCurrentUser 
             ? 'bg-primary text-primary-foreground' 
-            : isSystemMessage
-            ? 'bg-accent text-accent-foreground border border-accent-foreground/20'
+            : isAutoReply
+            ? 'bg-blue-50 dark:bg-blue-950 text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-800'
             : 'bg-muted text-muted-foreground'
         }`}>
+          {isAutoReply && (
+            <div className="flex items-center space-x-1 mb-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-xs font-medium text-blue-600 dark:text-blue-400">Support Bot</span>
+            </div>
+          )}
           {message.message_type === 'text' ? (
-            <p className="text-sm">{message.content}</p>
+            <p className="text-sm">
+              {isAutoReply ? message.content?.replace('[Auto-Reply] ', '') : message.content}
+            </p>
           ) : (
             <div className="space-y-2">
               {message.file_type && isImageFile(message.file_type) ? (
@@ -425,9 +462,19 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
               <MessageSquare className="h-5 w-5" />
               <span>Chat Support</span>
             </DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearChat}
+                title="Clear chat"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 
