@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { QuickQuestions } from "./QuickQuestions";
-import { PredefinedQuestion } from "@/data/predefinedQuestions";
+import { PredefinedQuestion, PREDEFINED_QUESTIONS } from "@/data/predefinedQuestions";
 
 interface ChatMessage {
   id: string;
@@ -193,6 +193,15 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
 
       if (error) throw error;
       if (!messageContent) setNewMessage("");
+
+      // Check if the message matches a predefined question and trigger auto-reply
+      const matchingQuestion = PREDEFINED_QUESTIONS.find(q => 
+        q.question.toLowerCase().trim() === content.toLowerCase().trim()
+      );
+      
+      if (matchingQuestion) {
+        await sendAutoReply(matchingQuestion.answer);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -225,11 +234,9 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
     }, 1000);
   };
 
-  const handleQuestionSelect = async (question: PredefinedQuestion) => {
-    // Send user's question
-    await sendMessage(question.question);
-    // Send auto-reply
-    await sendAutoReply(question.answer);
+  const handleQuestionSelect = (question: PredefinedQuestion) => {
+    // Populate the textarea with the selected question
+    setNewMessage(question.question);
   };
 
   const handleSendClick = () => {
