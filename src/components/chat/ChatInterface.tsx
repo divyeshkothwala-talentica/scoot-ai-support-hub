@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { QuickQuestions } from "./QuickQuestions";
 import { ConversationSidebar } from "./ConversationSidebar";
+import { MessageFeedback } from "./MessageFeedback";
 import { PredefinedQuestion, PREDEFINED_QUESTIONS } from "@/data/predefinedQuestions";
 
 interface ChatMessage {
@@ -500,6 +501,16 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
           <p className="text-xs opacity-70 mt-1">
             {new Date(message.created_at).toLocaleTimeString()}
           </p>
+          
+          {/* Show feedback buttons only for auto-replies */}
+          {isAutoReply && (
+            <MessageFeedback 
+              messageId={message.id}
+              onFeedbackSubmitted={() => {
+                // Optionally refresh feedback state if needed
+              }}
+            />
+          )}
         </div>
       </div>
     );
