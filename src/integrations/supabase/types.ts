@@ -478,6 +478,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      increment_faq_view_count: {
+        Args: { faq_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

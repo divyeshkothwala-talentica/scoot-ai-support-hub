@@ -120,19 +120,12 @@ export const FAQSection = ({ onArticleSelect }: FAQSectionProps) => {
   };
 
   const handleArticleView = async (articleId: string) => {
-    // Increment view count
-    try {
-      await supabase.rpc('increment_faq_view_count', { faq_id: articleId });
-      
-      // Update local state
-      setArticles(prev => prev.map(article => 
-        article.id === articleId 
-          ? { ...article, view_count: article.view_count + 1 }
-          : article
-      ));
-    } catch (error) {
-      console.error('Error incrementing view count:', error);
-    }
+    // Update local state immediately for better UX
+    setArticles(prev => prev.map(article => 
+      article.id === articleId 
+        ? { ...article, view_count: article.view_count + 1 }
+        : article
+    ));
   };
 
   const handleRating = async (articleId: string, isHelpful: boolean) => {
