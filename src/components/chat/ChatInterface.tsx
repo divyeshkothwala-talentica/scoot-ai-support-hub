@@ -694,172 +694,193 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] p-0 flex flex-col md:flex-row w-[95vw] md:w-full">
-        {/* Mobile Header - Only visible on mobile */}
-        <div className="md:hidden p-3 border-b bg-background flex items-center justify-between">
-          <DialogTitle className="flex items-center space-x-2">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            <span>Support Chat</span>
-          </DialogTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowSidebar(!showSidebar)}
-            className="p-2"
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Sidebar - Hidden on mobile by default, slides in when toggled */}
-        <div className={`${showSidebar ? 'block' : 'hidden'} md:block absolute md:relative inset-0 md:inset-auto z-10 md:z-auto`}>
-          <ConversationSidebar
-            selectedConversationId={conversationId}
-            onConversationSelect={(id) => {
-              handleConversationSelect(id);
-              setShowSidebar(false); // Close sidebar on mobile after selection
-            }}
-            onNewConversation={() => {
-              handleNewConversation();
-              setShowSidebar(false); // Close sidebar on mobile after creating new chat
-            }}
-          />
-        </div>
-        
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Desktop Header - Only visible on desktop */}
-          <DialogHeader className="hidden md:block p-4 border-b">
-            <DialogTitle className="flex items-center space-x-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              <span>Support Chat</span>
-            </DialogTitle>
-          </DialogHeader>
-
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
-            {/* Quick Questions - Always show at top */}
-            <QuickQuestions onQuestionSelect={handleQuestionSelect} />
-            
-            {messages.length === 0 ? (
-              <div className="text-center text-muted-foreground py-6 md:py-8">
-                <MessageSquare className="h-8 w-8 md:h-12 md:w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm md:text-base">Start a conversation with our support team</p>
-                <p className="text-xs md:text-sm mt-2">Use the questions above or ask anything!</p>
+      <DialogContent className="max-w-6xl h-[90vh] p-0 w-[95vw] md:w-full">
+        <div className="flex h-full">
+          {/* Sidebar Overlay for Mobile */}
+          {showSidebar && (
+            <div 
+              className="md:hidden fixed inset-0 bg-black/50 z-40"
+              onClick={() => setShowSidebar(false)}
+            />
+          )}
+          
+          {/* Sidebar */}
+          <div className={`
+            ${showSidebar ? 'translate-x-0' : '-translate-x-full'} 
+            md:translate-x-0 
+            fixed md:relative 
+            inset-y-0 left-0 
+            z-50 md:z-auto 
+            w-80 md:w-80 
+            transition-transform duration-300 ease-in-out
+            md:transition-none
+          `}>
+            <ConversationSidebar
+              selectedConversationId={conversationId}
+              onConversationSelect={(id) => {
+                handleConversationSelect(id);
+                setShowSidebar(false); // Close sidebar on mobile after selection
+              }}
+              onNewConversation={() => {
+                handleNewConversation();
+                setShowSidebar(false); // Close sidebar on mobile after creating new chat
+              }}
+            />
+          </div>
+          
+          {/* Main Chat Area */}
+          <div className="flex-1 flex flex-col min-h-0 w-full md:w-auto">
+            {/* Header */}
+            <div className="p-3 md:p-4 border-b bg-background flex items-center justify-between">
+              <DialogTitle className="flex items-center space-x-2">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                <span>Support Chat</span>
+              </DialogTitle>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSidebar(!showSidebar)}
+                  className="p-2 md:hidden"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClose}
+                  className="p-2"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-            ) : (
-              <div className="space-y-3 md:space-y-4">
-                {messages.map(renderMessage)}
-              </div>
-            )}
-            
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="bg-muted text-muted-foreground px-3 py-2 md:px-4 md:py-2 rounded-lg">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 min-h-0">
+              {/* Quick Questions - Always show at top */}
+              <QuickQuestions onQuestionSelect={handleQuestionSelect} />
+              
+              {messages.length === 0 ? (
+                <div className="text-center text-muted-foreground py-6 md:py-8">
+                  <MessageSquare className="h-8 w-8 md:h-12 md:w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-sm md:text-base">Start a conversation with our support team</p>
+                  <p className="text-xs md:text-sm mt-2">Use the questions above or ask anything!</p>
+                </div>
+              ) : (
+                <div className="space-y-3 md:space-y-4">
+                  {messages.map(renderMessage)}
+                </div>
+              )}
+              
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-muted text-muted-foreground px-3 py-2 md:px-4 md:py-2 rounded-lg">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Upload Progress */}
+            {isUploading && (
+              <div className="px-3 py-2 md:px-4 md:py-2 border-t bg-muted/30">
+                <div className="flex items-center space-x-2">
+                  <Upload className="h-4 w-4" />
+                  <div className="flex-1">
+                    <Progress value={uploadProgress} className="h-2" />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Uploading... {Math.round(uploadProgress)}%
+                    </p>
                   </div>
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
-          </div>
 
-          {/* Upload Progress */}
-          {isUploading && (
-            <div className="px-3 py-2 md:px-4 md:py-2 border-t bg-muted/30">
-              <div className="flex items-center space-x-2">
-                <Upload className="h-4 w-4" />
-                <div className="flex-1">
-                  <Progress value={uploadProgress} className="h-2" />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Uploading... {Math.round(uploadProgress)}%
-                  </p>
+            {/* Input Area */}
+            <div className="border-t p-3 md:p-4 bg-background">
+              <div className="flex items-end space-x-2">
+                <div className="flex-1 relative">
+                  <Textarea
+                    value={newMessage}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      handleTypingStart();
+                    }}
+                    placeholder="Type your message..."
+                    className="min-h-[40px] max-h-[100px] md:max-h-[120px] resize-none text-sm md:text-base"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendClick();
+                      }
+                    }}
+                  />
+                </div>
+                
+                <div className="flex space-x-1 md:space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="h-[40px] w-[40px] p-0 shrink-0"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    onClick={handleSendClick}
+                    disabled={!newMessage.trim() || isLoading}
+                    size="sm"
+                    className="h-[40px] w-[40px] p-0 shrink-0"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Input Area */}
-          <div className="border-t p-3 md:p-4 bg-background">
-            <div className="flex items-end space-x-2">
-              <div className="flex-1 relative">
-                <Textarea
-                  value={newMessage}
-                  onChange={(e) => {
-                    setNewMessage(e.target.value);
-                    handleTypingStart();
-                  }}
-                  placeholder="Type your message..."
-                  className="min-h-[40px] max-h-[100px] md:max-h-[120px] resize-none text-sm md:text-base"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendClick();
-                    }
-                  }}
-                />
-              </div>
-              
-              <div className="flex space-x-1 md:space-x-2">
+              {/* File input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                hidden
+                accept={Object.keys(ALLOWED_FILE_TYPES).join(',')}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    handleFileUpload(file);
+                    e.target.value = '';
+                  }
+                }}
+              />
+
+              {/* Chat controls and file type info */}
+              <div className="flex justify-between items-center mt-2 md:mt-3">
+                <div className="flex flex-wrap gap-1">
+                  <Badge variant="outline" className="text-xs">PDF</Badge>
+                  <Badge variant="outline" className="text-xs">JPG</Badge>
+                  <Badge variant="outline" className="text-xs">PNG</Badge>
+                  <Badge variant="outline" className="text-xs">GIF</Badge>
+                  <Badge variant="outline" className="text-xs">MP4</Badge>
+                  <Badge variant="outline" className="text-xs">AVI</Badge>
+                  <span className="text-xs text-muted-foreground ml-2">Max 25MB</span>
+                </div>
                 <Button
-                  variant="outline"
+                  onClick={clearChat}
+                  variant="ghost"
                   size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="h-[40px] w-[40px] p-0 shrink-0"
+                  className="text-destructive hover:text-destructive text-xs md:text-sm shrink-0"
                 >
-                  <Paperclip className="h-4 w-4" />
-                </Button>
-                
-                <Button
-                  onClick={handleSendClick}
-                  disabled={!newMessage.trim() || isLoading}
-                  size="sm"
-                  className="h-[40px] w-[40px] p-0 shrink-0"
-                >
-                  <Send className="h-4 w-4" />
+                  <RotateCcw className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                  Clear Chat
                 </Button>
               </div>
-            </div>
-
-            {/* File input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              hidden
-              accept={Object.keys(ALLOWED_FILE_TYPES).join(',')}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleFileUpload(file);
-                  e.target.value = '';
-                }
-              }}
-            />
-
-            {/* Chat controls and file type info */}
-            <div className="flex justify-between items-center mt-2 md:mt-3">
-              <div className="flex flex-wrap gap-1">
-                <Badge variant="outline" className="text-xs">PDF</Badge>
-                <Badge variant="outline" className="text-xs">JPG</Badge>
-                <Badge variant="outline" className="text-xs">PNG</Badge>
-                <Badge variant="outline" className="text-xs">GIF</Badge>
-                <Badge variant="outline" className="text-xs">MP4</Badge>
-                <Badge variant="outline" className="text-xs">AVI</Badge>
-                <span className="text-xs text-muted-foreground ml-2">Max 25MB</span>
-              </div>
-              <Button
-                onClick={clearChat}
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:text-destructive text-xs md:text-sm shrink-0"
-              >
-                <RotateCcw className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                Clear Chat
-              </Button>
             </div>
           </div>
         </div>
