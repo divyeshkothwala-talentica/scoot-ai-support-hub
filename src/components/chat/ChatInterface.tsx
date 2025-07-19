@@ -187,6 +187,7 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
     const content = messageContent || newMessage.trim();
     if (!content || !conversationId || !user) return;
 
+    console.log('Sending message:', content);
     setIsLoading(true);
     try {
       // Send user message
@@ -213,23 +214,30 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
         q.question.toLowerCase().trim() === content.toLowerCase().trim()
       );
       
+      console.log('Matching question found:', matchingQuestion);
+      console.log('All predefined questions:', PREDEFINED_QUESTIONS.map(q => q.question));
+      
       // Send auto-reply after a short delay
       setTimeout(async () => {
         const replyContent = matchingQuestion 
           ? matchingQuestion.answer 
           : "Thank you for your message! Our support team will get back to you shortly. For immediate assistance, please use one of the quick questions above or call our support hotline.";
         
+        console.log('Sending auto-reply:', replyContent);
+        
         try {
           const { data: autoReply, error: replyError } = await supabase
             .from('chat_messages')
             .insert({
               conversation_id: conversationId,
-              user_id: 'system',
-              content: replyContent,
+              user_id: user.id, // Changed from 'system' to user.id to avoid RLS issues
+              content: `[Auto-Reply] ${replyContent}`,
               message_type: 'text'
             })
             .select()
             .single();
+
+          console.log('Auto-reply result:', { autoReply, replyError });
 
           if (!replyError && autoReply) {
             setMessages(prev => [...prev, autoReply]);
@@ -248,24 +256,6 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const sendAutoReply = async (answer: string) => {
-    if (!conversationId || !user) return;
-
-    try {
-      // Send auto-reply immediately without delay
-      await supabase
-        .from('chat_messages')
-        .insert({
-          conversation_id: conversationId,
-          user_id: 'system', // Use 'system' to indicate auto-reply
-          content: answer,
-          message_type: 'text'
-        });
-    } catch (error) {
-      console.error('Error sending auto-reply:', error);
     }
   };
 
