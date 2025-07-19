@@ -694,7 +694,7 @@ export const ChatInterface = ({ isOpen, onClose, onConversationUpdate }: ChatInt
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] p-0 w-[95vw] md:w-full flex flex-col">
+      <DialogContent className="max-w-6xl h-[90vh] p-0 w-[95vw] md:w-full flex flex-col [&>button]:hidden">
         <div className="flex h-full min-h-0">
           {/* Sidebar Overlay for Mobile */}
           {showSidebar && (
